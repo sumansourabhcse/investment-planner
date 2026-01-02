@@ -1,27 +1,61 @@
-import json
-import pandas as pd
+import streamlit as st
+from utils.data_io import load_allocations, save_allocations
+from utils.calculations import calculate_totals
 
-def load_allocations():
-    try:
-        return pd.read_json("data/fund_allocations.json")
-    except:
-        return pd.DataFrame(columns=["fund_name", "category", "previous_year", "Jan", "Feb", "Mar"])
+st.title("🧮 Allocation Grid")
 
-def save_allocations(df):
-    df.to_json("data/fund_allocations.json", orient="records")
+CATEGORY_OPTIONS = ["LargeCap", "MidCap", "SmallCap", "Flexi", "International", "Other"]
+MONTH_OPTIONS = ["Jan", "Feb", "Mar", "Apr", "May", "Jun",
+                 "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"]
+YEAR_OPTIONS = ["2025", "2026", "2027"]
 
-def load_targets():
-    try:
-        return json.load(open("data/category_targets.json"))
-    except:
-        return {"LargeCap": 0, "MidCap": 0, "SmallCap": 0, "Flexi": 0, "International": 0, "Other": 0}
+data = load_allocations()
 
-def save_targets(targets):
-    with open("data/category_targets.json", "w") as f:
-        json.dump(targets, f)
+# Remove previous_year column
+if "previous_year" in data.columns:
+    data = data.drop(columns=["previous_year"])
 
-def load_buffer():
-    try:
-        return json.load(open("data/monthly_buffer.json"))
-    except:
-        return {"Jan": 0, "Feb": 0, "Mar": 0}
+# Ensure required columns exist
+for col in ["category", "month", "year", "amount"]:
+    if col not in data.columns:
+        data[col] = ""
+
+edited = st.data_editor(
+    data,
+    num_rows="dynamic",
+    use_container_width=True,
+    column_config={
+        "category": st.column_config.SelectboxColumn(
+            "Category",
+            options=CATEGORY_OPTIONS,
+            required=True
+        ),
+        "month": st.column_config.SelectboxColumn(
+            "Month",
+            options=MONTH_OPTIONS,
+            required=True
+        ),
+        "year": st.column_config.SelectboxColumn(
+            "Year",
+            options=YEAR_OPTIONS,
+            required=True
+        ),
+        "amount": st.column_config.NumberColumn(
+            "Amount",
+            min_value=0,
+            step=100
+        )
+    }
+)
+
+if st.button("Save Allocations"):
+    save_allocations(edited)
+    st.success("Saved!")
+
+totals = calculate_totals(edited)
+
+st.subheader("Category Totals")
+st.dataframe(totals["category_totals"])
+
+st.subheader("Monthly Totals")
+st.dataframe(totals["monthly_totals"])
