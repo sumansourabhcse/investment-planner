@@ -32,12 +32,34 @@ mutual_funds = {
     "SBI Magnum Children's Benefit Fund": "148490"
 }
 
-FUND_OPTIONS = list(mutual_funds.keys())
+fund_categories = {
+    "147946": "Small Cap",
+    "125354": "Small Cap",
+    "125497": "Small Cap",
+    "120828": "Small Cap",
 
-CATEGORY_OPTIONS = ["LargeCap", "MidCap", "SmallCap", "Flexi", "International", "Other"]
-MONTH_OPTIONS = ["Jan", "Feb", "Mar", "Apr", "May", "Jun",
-                 "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"]
-YEAR_OPTIONS = ["2025", "2026", "2027"]
+    "127042": "Mid Cap",
+    "151034": "Mid Cap",
+    "119775": "Mid Cap",
+    "120841": "Mid Cap",
+    "150902": "Mid Cap",
+
+    "122639": "Flexi Cap",
+    "112090": "Flexi Cap",
+
+    "118632": "Large Cap",
+    "118834": "Large Cap",
+    "143903": "Large Cap",
+    "120834": "Large Cap",
+
+    "148928": "Others",
+    "120594": "Others",
+    "148490": "Others"
+}
+
+FUND_OPTIONS = list(mutual_funds.keys())
+MONTH_OPTIONS = ["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"]
+YEAR_OPTIONS = ["2025","2026","2027"]
 
 # -----------------------------
 # LOAD DATA
@@ -50,7 +72,7 @@ for col in ["previous_year", "Jan", "Feb", "Mar"]:
         data = data.drop(columns=[col])
 
 # Ensure required columns exist
-for col in ["fund_name", "category", "month", "year", "amount"]:
+for col in ["fund_name", "month", "year", "amount"]:
     if col not in data.columns:
         data[col] = ""
 
@@ -65,11 +87,6 @@ edited = st.data_editor(
         "fund_name": st.column_config.SelectboxColumn(
             "Fund Name",
             options=FUND_OPTIONS,
-            required=True
-        ),
-        "category": st.column_config.SelectboxColumn(
-            "Category",
-            options=CATEGORY_OPTIONS,
             required=True
         ),
         "month": st.column_config.SelectboxColumn(
@@ -89,6 +106,15 @@ edited = st.data_editor(
         )
     }
 )
+
+# -----------------------------
+# AUTO-FILL CATEGORY BASED ON FUND
+# -----------------------------
+edited["fund_code"] = edited["fund_name"].map(mutual_funds)
+edited["category"] = edited["fund_code"].map(fund_categories)
+
+# Show category as read-only
+st.dataframe(edited[["fund_name", "category", "month", "year", "amount"]])
 
 # -----------------------------
 # SAVE BUTTON
