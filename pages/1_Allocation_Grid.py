@@ -11,12 +11,13 @@ YEAR_OPTIONS = ["2025", "2026", "2027"]
 
 data = load_allocations()
 
-# Remove previous_year column
-if "previous_year" in data.columns:
-    data = data.drop(columns=["previous_year"])
+# Remove legacy columns if they exist
+for col in ["previous_year", "Jan", "Feb", "Mar"]:
+    if col in data.columns:
+        data = data.drop(columns=[col])
 
 # Ensure required columns exist
-for col in ["category", "month", "year", "amount"]:
+for col in ["fund_name", "category", "month", "year", "amount"]:
     if col not in data.columns:
         data[col] = ""
 
@@ -25,6 +26,10 @@ edited = st.data_editor(
     num_rows="dynamic",
     use_container_width=True,
     column_config={
+        "fund_name": st.column_config.TextColumn(
+            "Fund Name",
+            required=True
+        ),
         "category": st.column_config.SelectboxColumn(
             "Category",
             options=CATEGORY_OPTIONS,
